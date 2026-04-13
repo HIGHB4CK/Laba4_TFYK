@@ -122,7 +122,8 @@ public class HelloController {
         searchTypeComboBox.setItems(FXCollections.observableArrayList(
             "Пользовательские логины",
             "C++ комментарии",
-            "12-часовой формат времени"
+            "12-часовой формат времени",
+            "C++ комментарии (Автомат)"
         ));
         
         searchSubstringCol.setCellValueFactory(new PropertyValueFactory<>("substring"));
@@ -451,30 +452,67 @@ public class HelloController {
         }
 
         searchResultData.clear();
-        Pattern pattern = (flags == 0) ? Pattern.compile(regex) : Pattern.compile(regex, flags);
-        Matcher matcher = pattern.matcher(text);
+        
+        if (selectedType.equals("C++ комментарии (Автомат)")) {
+            int state = 0;
+            int startIdx = -1;
+            int len = text.length();
 
-        while (matcher.find()) {
-            String matchStr = matcher.group();
-            int start = matcher.start();
-            int len = matcher.end() - matcher.start();
-            
-            int line = 1;
-            int col = 1;
-            for (int i = 0; i < start; i++) {
-                if (text.charAt(i) == '\n') {
-                    line++;
-                    col = 1;
-                } else {
-                    col++;
+            for (int i = 0; i < len; i++) {
+                char c = text.charAt(i);
+                switch (state) {
+                    case 0:
+                        if (c == '/') {
+                            state = 1;
+                            startIdx = i;
+                        }
+                        break;
+                    case 1:
+                        if (c == '/') {
+                            state = 2;
+                        } else if (c == '*') {
+                            state = 3;
+                        } else {
+                            i = startIdx;
+                            state = 0;
+                        }
+                        break;
+                    case 2:
+                        if (c == '\n' || i == len - 1) {
+                            int endIdx = (c == '\n') ? i : i + 1;
+                            String matchStr = text.substring(startIdx, endIdx);
+                            addSearchResult(matchStr, startIdx, endIdx - startIdx, "Комментарий (DFA)", text);
+                            state = 0;
+                        }
+                        break;
+                    case 3:
+                        if (c == '*') {
+                            state = 4;
+                        }
+                        break;
+                    case 4:
+                        if (c == '/') {
+                            int endIdx = i + 1;
+                            String matchStr = text.substring(startIdx, endIdx);
+                            addSearchResult(matchStr, startIdx, endIdx - startIdx, "Комментарий (DFA)", text);
+                            state = 0;
+                        } else if (c != '*') {
+                            state = 3;
+                        }
+                        break;
                 }
             }
-            String loc = "(стр: " + line + ", симв: " + col + ")";
-            
-            // Фильтр для логина: не должен начинаться с цифры. Мы используем паттерн:
-            // [a-zA-Z_.-] - первый символ, дальше [a-zA-Z0-9_.-]*, так что цифра в начале исключена паттерном.
-            
-            searchResultData.add(new SearchResult(matchStr, start, len, typeDesc, loc));
+        } else {
+            Pattern pattern = (flags == 0) ? Pattern.compile(regex) : Pattern.compile(regex, flags);
+            Matcher matcher = pattern.matcher(text);
+
+            while (matcher.find()) {
+                String matchStr = matcher.group();
+                int start = matcher.start();
+                int len = matcher.end() - matcher.start();
+                
+                addSearchResult(matchStr, start, len, typeDesc, text);
+            }
         }
 
         if (searchResultData.isEmpty()) {
@@ -482,6 +520,21 @@ public class HelloController {
         } else {
             textArea2.setText("Найдено совпадений: " + searchResultData.size() + " (" + selectedType + ")");
         }
+    }
+
+    private void addSearchResult(String matchStr, int start, int len, String typeDesc, String text) {
+        int line = 1;
+        int col = 1;
+        for (int i = 0; i < start; i++) {
+            if (text.charAt(i) == '\n') {
+                line++;
+                col = 1;
+            } else {
+                col++;
+            }
+        }
+        String loc = "(стр: " + line + ", симв: " + col + ")";
+        searchResultData.add(new SearchResult(matchStr, start, len, typeDesc, loc));
     }
 
     @FXML
