@@ -1,0 +1,6 @@
+.keyword { -fx-fill: #000080; -fx-font-weight: bold; }
+.identifier { -fx-fill: #000000; }
+.string { -fx-fill: #008000; -fx-font-weight: bold; }
+.number { -fx-fill: #0000FF; }
+.operator { -fx-fill: #CC7832; }
+.error { -fx-underline: true; -fx-underline-color: red; -fx-fill: red; }

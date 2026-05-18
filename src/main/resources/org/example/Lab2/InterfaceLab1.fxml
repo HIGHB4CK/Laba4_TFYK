@@ -11,186 +11,158 @@
       fx:controller="org.example.Lab2.HelloController">
 
     <children>
-        <MenuBar>
+        <MenuBar fx:id="menuBar">
             <menus>
-                <Menu text="Файл">
-                    <MenuItem text="Создать" onAction="#handleNew"/>
-                    <MenuItem text="Открыть" onAction="#handleOpen"/>
-                    <MenuItem text="Сохранить" onAction="#handleSave"/>
-                    <MenuItem text="Сохранить как" onAction="#handleSaveAs"/>
+                <Menu fx:id="menuFile" text="Файл">
+                    <MenuItem fx:id="menuItemNew" text="Создать" onAction="#handleNew"/>
+                    <MenuItem fx:id="menuItemOpen" text="Открыть" onAction="#handleOpen"/>
+                    <MenuItem fx:id="menuItemSave" text="Сохранить" onAction="#handleSave"/>
+                    <MenuItem fx:id="menuItemSaveAs" text="Сохранить как" onAction="#handleSaveAs"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Выход" onAction="#handleExit"/>
+                    <MenuItem fx:id="menuItemExit" text="Выход" onAction="#handleExit"/>
                 </Menu>
 
-                <Menu text="Правка">
-                    <MenuItem text="Отменить" onAction="#handleUndo"/>
-                    <MenuItem text="Повторить" onAction="#handleRedo"/>
+                <Menu fx:id="menuEdit" text="Правка">
+                    <MenuItem fx:id="menuItemUndo" text="Отменить" onAction="#handleUndo"/>
+                    <MenuItem fx:id="menuItemRedo" text="Повторить" onAction="#handleRedo"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Вырезать" onAction="#handleCut"/>
-                    <MenuItem text="Копировать" onAction="#handleCopy"/>
-                    <MenuItem text="Вставить" onAction="#handlePaste"/>
-                    <MenuItem text="Удалить" onAction="#handleDelete"/>
+                    <MenuItem fx:id="menuItemCut" text="Вырезать" onAction="#handleCut"/>
+                    <MenuItem fx:id="menuItemCopy" text="Копировать" onAction="#handleCopy"/>
+                    <MenuItem fx:id="menuItemPaste" text="Вставить" onAction="#handlePaste"/>
+                    <MenuItem fx:id="menuItemDelete" text="Удалить" onAction="#handleDelete"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Выделить все" onAction="#handleSelectAll"/>
-                    <MenuItem text="Увеличить шрифт" onAction="#increaseFont"/>
-                    <MenuItem text="Уменьшить шрифт" onAction="#decreaseFont"/>
+                    <MenuItem fx:id="menuItemSelectAll" text="Выделить все" onAction="#handleSelectAll"/>
+                    <MenuItem fx:id="menuItemIncFont" text="Увеличить шрифт" onAction="#increaseFont"/>
+                    <MenuItem fx:id="menuItemDecFont" text="Уменьшить шрифт" onAction="#decreaseFont"/>
                 </Menu>
 
-                <Menu text="Текст">
-                    <MenuItem text="Постановка задачи" onAction="#handleProblemStatement"/>
-                    <MenuItem text="Грамматика" onAction="#handleGrammar"/>
-                    <MenuItem text="Классификация грамматики" onAction="#handleGrammarClassification"/>
-                    <MenuItem text="Метод анализа" onAction="#handleAnalysisMethod"/>
-                    <MenuItem text="Тестовый пример" onAction="#handleTestExample"/>
-                    <MenuItem text="Список литературы" onAction="#handleLiteratureList"/>
-                    <MenuItem text="Исходный код программы" onAction="#handleListing"/>
+                <Menu fx:id="menuText" text="Текст">
+                    <MenuItem fx:id="menuItemTask" text="Постановка задачи" onAction="#handleProblemStatement"/>
+                    <MenuItem fx:id="menuItemGrammar" text="Грамматика" onAction="#handleGrammar"/>
+                    <MenuItem fx:id="menuItemClass" text="Классификация грамматики" onAction="#handleGrammarClassification"/>
+                    <MenuItem fx:id="menuItemMethod" text="Метод анализа" onAction="#handleAnalysisMethod"/>
+                    <MenuItem fx:id="menuItemTest" text="Тестовый пример" onAction="#handleTestExample"/>
+                    <MenuItem fx:id="menuItemLit" text="Список литературы" onAction="#handleLiteratureList"/>
+                    <MenuItem fx:id="menuItemCode" text="Исходный код программы" onAction="#handleListing"/>
                 </Menu>
 
-                <Menu text="Пуск">
-                    <MenuItem text="Запуск анализатора" onAction="#handleRun"/>
+                <Menu fx:id="menuRun" text="Пуск">
+                    <MenuItem fx:id="menuItemStart" text="Запуск анализатора" onAction="#handleRun"/>
                 </Menu>
 
-                <Menu text="Справка">
-                    <MenuItem text="Вызов справки" onAction="#handleCallingHelp"/>
-                    <MenuItem text="О программе" onAction="#handleAbout"/>
+                <Menu fx:id="menuLang" text="Язык">
+                    <MenuItem text="Русский" onAction="#setLangRu"/>
+                    <MenuItem text="English" onAction="#setLangEn"/>
                 </Menu>
 
+                <Menu fx:id="menuHelp" text="Справка">
+                    <MenuItem fx:id="menuItemHelp" text="Вызов справки" onAction="#handleCallingHelp"/>
+                    <MenuItem fx:id="menuItemAbout" text="О программе" onAction="#handleAbout"/>
+                </Menu>
             </menus>
         </MenuBar>
 
         <ToolBar>
-
             <Button onAction="#handleNew">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/create.ico"/>
-                        </image>
+                        <image><Image url="@icons/create.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Button onAction="#handleOpen">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/directory.ico"/>
-                        </image>
+                        <image><Image url="@icons/directory.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Button onAction="#handleSave">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/save.ico"/>
-                        </image>
+                        <image><Image url="@icons/save.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Separator/>
-
             <Button onAction="#handleUndo">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/back.ico"/>
-                        </image>
+                        <image><Image url="@icons/back.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Button onAction="#handleRedo">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/forward.ico"/>
-                        </image>
+                        <image><Image url="@icons/forward.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Separator/>
-
             <Button onAction="#handleCopy">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/copy.ico"/>
-                        </image>
+                        <image><Image url="@icons/copy.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Button onAction="#handleCut">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/cut.ico"/>
-                        </image>
+                        <image><Image url="@icons/cut.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
             <Button onAction="#handlePaste">
                 <graphic>
                     <ImageView fitHeight="20" fitWidth="20">
-                        <image>
-                            <Image url="@icons/paste.ico"/>
-                        </image>
+                        <image><Image url="@icons/paste.ico"/></image>
                     </ImageView>
                 </graphic>
             </Button>
-
         </ToolBar>
 
         <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS">
-
             <items>
+                <TabPane fx:id="editorTabPane" VBox.vgrow="ALWAYS" />
 
-                <TextArea fx:id="textArea"
-                          wrapText="true"/>
-
-                <TabPane tabClosingPolicy="UNAVAILABLE">
+                <TabPane fx:id="resultsTabPane" tabClosingPolicy="UNAVAILABLE">
                     <tabs>
-                        <Tab text="Результаты">
+                        <Tab fx:id="tabResults" text="Результаты">
                             <content>
                                 <TableView fx:id="resultTable">
                                     <columns>
-                                        <TableColumn fx:id="codeCol" text="Код" prefWidth="50" style="-fx-alignment: CENTER;" />
+                                        <TableColumn fx:id="codeCol" text="Код" prefWidth="50" style="-fx-alignment: CENTER;"/>
                                         <TableColumn fx:id="typeCol" text="Тип" prefWidth="250" />
                                         <TableColumn fx:id="lexemeCol" text="Лексема" prefWidth="200" />
-                                        <TableColumn fx:id="locationCol" text="Местоположение" prefWidth="150" style="-fx-alignment: CENTER;" />
+                                        <TableColumn fx:id="locationCol" text="Местоположение" prefWidth="150" style="-fx-alignment: CENTER;"/>
                                     </columns>
                                 </TableView>
                             </content>
                         </Tab>
-                        <Tab text="Синтаксические ошибки">
+                        <Tab fx:id="tabSyntaxErrors" text="Синтаксические ошибки">
                             <content>
                                 <TableView fx:id="syntaxErrorTable">
                                     <columns>
                                         <TableColumn fx:id="errorFragmentCol" text="Неверный фрагмент" prefWidth="200" />
-                                        <TableColumn fx:id="errorLocationCol" text="Местоположение" prefWidth="150" style="-fx-alignment: CENTER;" />
+                                        <TableColumn fx:id="errorLocationCol" text="Местоположение" prefWidth="150" style="-fx-alignment: CENTER;"/>
                                         <TableColumn fx:id="errorDescCol" text="Описание" prefWidth="300" />
                                     </columns>
                                 </TableView>
                             </content>
                         </Tab>
-                        <Tab text="Сообщения">
+                        <Tab fx:id="tabMessages" text="Сообщения">
                             <content>
-                                <TextArea fx:id="textArea2"
-                                          editable="false"
-                                          wrapText="true"/>
+                                <TextArea fx:id="textArea2" editable="false" wrapText="true"/>
                             </content>
                         </Tab>
-                        <Tab text="Поиск (Regex)">
+                        <Tab fx:id="tabSearch" text="Поиск (Regex)">
                             <content>
                                 <VBox spacing="5" >
                                     <HBox spacing="10" style="-fx-padding: 5;">
                                         <ComboBox fx:id="searchTypeComboBox" prefWidth="200" promptText="Выберите паттерн"/>
-                                        <Button text="Искать" onAction="#handleRegexSearch"/>
+                                        <Button fx:id="btnSearch" text="Искать" onAction="#handleRegexSearch"/>
                                     </HBox>
                                     <TableView fx:id="searchResultTable" VBox.vgrow="ALWAYS">
                                         <columns>
@@ -205,10 +177,13 @@
                         </Tab>
                     </tabs>
                 </TabPane>
-
             </items>
-
         </SplitPane>
 
+        <HBox fx:id="statusBar" spacing="10" style="-fx-padding: 3 10; -fx-background-color: #e0e0e0;">
+            <Label fx:id="statusLabel" text="Готово"/>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="caretPositionLabel" text="Стр: 1, Симв: 1"/>
+        </HBox>
     </children>
 </VBox>

@@ -1,16 +1,15 @@
 package org.example.Lab2;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Parser {
 
     private final List<Token> tokens;
     private int pos;
     private final List<SyntaxError> errors;
+
+    private final Map<String, String> symbolTable = new HashMap<>();
+    private AstNode rootAst = null; // Корень дерева
 
     public Parser(List<Token> allTokens) {
         this.tokens = new ArrayList<>();
@@ -25,40 +24,19 @@ public class Parser {
         this.pos = 0;
     }
 
-    public static List<SyntaxError> parse(List<Token> tokens) {
+    public static ParseResult parse(List<Token> tokens) {
         Parser parser = new Parser(tokens);
-        parser.parseZ();
-        
-        List<SyntaxError> mergedErrors = new ArrayList<>();
-        if (!parser.errors.isEmpty()) {
-            SyntaxError prev = parser.errors.get(0);
-            for (int i = 1; i < parser.errors.size(); i++) {
-                SyntaxError curr = parser.errors.get(i);
-                
-                boolean hasTokensBetween = false;
-                for (Token t : parser.tokens) {
-                    if (t.getGlobalStart() > prev.getGlobalEnd() && t.getGlobalEnd() < curr.getGlobalStart()) {
-                        hasTokensBetween = true;
-                        break;
-                    }
-                }
-                
-                if (!hasTokensBetween && prev.getDescription().equals(curr.getDescription())) {
-                    String newFragment;
-                    if (prev.getGlobalEnd() >= curr.getGlobalStart() - 1) {
-                        newFragment = prev.getFragment() + curr.getFragment();
-                    } else {
-                        newFragment = prev.getFragment() + " " + curr.getFragment();
-                    }
-                    prev = new SyntaxError(newFragment, prev.getLocation(), prev.getDescription(), prev.getGlobalStart(), curr.getGlobalEnd());
-                } else {
-                    mergedErrors.add(prev);
-                    prev = curr;
-                }
-            }
-            mergedErrors.add(prev);
+        parser.rootAst = parser.parseZ();
+        return new ParseResult(parser.errors, parser.rootAst);
+    }
+
+    public static class ParseResult {
+        public List<SyntaxError> errors;
+        public AstNode ast;
+        public ParseResult(List<SyntaxError> errors, AstNode ast) {
+            this.errors = errors;
+            this.ast = ast;
         }
-        return mergedErrors;
     }
 
     private void addError(String description) {
@@ -68,32 +46,22 @@ public class Parser {
         } else if (!tokens.isEmpty()) {
             Token t = tokens.get(tokens.size() - 1);
             errors.add(new SyntaxError("EOF", "конец файла", description, t.getGlobalEnd(), t.getGlobalEnd()));
-        } else {
-            errors.add(new SyntaxError("-", "-", description, 0, 0));
         }
     }
 
     private void recover(String... follow) {
         Set<String> followSet = new HashSet<>(Arrays.asList(follow));
-        followSet.add(";");
-        followSet.add("}");
-        
+        followSet.add(";"); followSet.add("}");
         int tempPos = pos;
         boolean foundSync = false;
         while (tempPos < tokens.size()) {
-            if (followSet.contains(tokens.get(tempPos).getText())) {
-                foundSync = true;
-                break;
-            }
+            if (followSet.contains(tokens.get(tempPos).getText())) { foundSync = true; break; }
             tempPos++;
         }
-
         if (foundSync) {
             while (!isEOF()) {
                 Token c = current();
-                if (followSet.contains(c.getText())) {
-                    break;
-                }
+                if (followSet.contains(c.getText())) break;
                 advance();
             }
         } else {
@@ -112,302 +80,228 @@ public class Parser {
         return false;
     }
 
-    private boolean matchType(int expectedCode, String expectedTypeDesc, String... follow) {
-        Token c = current();
-        if (c != null && c.getCode() == expectedCode) {
-            advance();
-            return true;
-        }
-        addError("Ожидалось " + expectedTypeDesc);
-        recover(follow);
-        return false;
-    }
+    private Token current() { return pos < tokens.size() ? tokens.get(pos) : null; }
+    private void advance() { if (pos < tokens.size()) pos++; }
+    private boolean isEOF() { return pos >= tokens.size(); }
 
-    private Token current() {
-        if (pos < tokens.size()) return tokens.get(pos);
-        return null;
-    }
+    private AstNode parseZ() {
+        if (isEOF()) return null;
 
-    private void advance() {
-        if (pos < tokens.size()) pos++;
-    }
+        String lhsType = null;
+        String lhsName = null;
 
-    private boolean isEOF() {
-        return pos >= tokens.size();
-    }
-
-    private void parseZ() {
-        if (isEOF()) return;
-
-        Token c = current();
-        if (c != null && c.getText().equals(";")) {
-             addError("Ожидалось лямбда-выражение (левая часть, =, и само выражение)");
-             advance();
-             return;
-        }
-
-        boolean hasAssignment = false;
         int tempPos = pos;
-        while (tempPos < tokens.size()) {
-             if (tokens.get(tempPos).getText().equals("->")) {
-                 break;
-             }
-             if (tokens.get(tempPos).getText().equals(";") || tokens.get(tempPos).getText().equals("{")) {
-                 break;
-             }
-             if (tokens.get(tempPos).getText().equals("=")) {
-                 hasAssignment = true;
-                 break;
-             }
-             tempPos++;
+        boolean hasAssignment = false;
+        while (tempPos < tokens.size() && !tokens.get(tempPos).getText().equals(";") && !tokens.get(tempPos).getText().equals("->")) {
+            if (tokens.get(tempPos).getText().equals("=")) { hasAssignment = true; break; }
+            tempPos++;
         }
 
         if (hasAssignment) {
-            c = current();
-            if (c != null && (c.getCode() == 14 || c.getText().equals("const"))) { 
+            Token c = current();
+            if (c != null && (c.getCode() == 14 || c.getText().equals("const"))) {
+                lhsType = c.getText();
                 advance();
-                matchType(2, "идентификатор", "=");
-            } else if (c != null && c.getCode() == 2) {
-                advance();
-                if (current() != null && current().getCode() == 2) {
+                c = current();
+                if (c != null && c.getCode() == 2) {
+                    lhsName = c.getText();
                     advance();
                 }
-            } else {
-                addError("Ожидалась левая часть присваивания");
-                recover("=");
+            } else if (c != null && c.getCode() == 2) {
+                lhsName = c.getText();
+                advance();
+            }
+
+            // ПРАВИЛО 1: Уникальность имени переменной (левая часть)
+            if (lhsName != null) {
+                if (symbolTable.containsKey(lhsName)) {
+                    addError("Семантическая ошибка: идентификатор '" + lhsName + "' уже объявлен ранее");
+                } else {
+                    symbolTable.put(lhsName, lhsType != null ? lhsType : "var");
+                }
             }
             match("=", "->", "(");
-        } else {
-            addError("Ожидалось присваивание переменной (отсутствует знак '=')");
         }
-        
-        c = current();
-        if (c == null || c.getText().equals(";")) {
-            if (hasAssignment) {
-                addError("Ожидалось лямбда-выражение");
-            }
-        } else {
-            parseLambda();
+
+        AstNode lambda = parseLambda();
+
+        while (!isEOF() && !current().getText().equals(";")) {
+            addError("Ожидался конец выражения, найдены лишние символы");
+            advance();
         }
-        
-        if (!isEOF() && !current().getText().equals(";")) {
-             while(!isEOF() && !current().getText().equals(";")) {
-                 addError("Ожидался конец выражения, найдены лишние символы");
-                 advance();
-             }
-        }
-        
         match(";", "EOF");
-        
-        if (!isEOF()) {
-             while(!isEOF()) {
-                 addError("Ожидался конец выражения, найдены лишние символы");
-                 advance();
-             }
-        }
+
+        return new AstNode.ProgramNode(lhsType, lhsName, lambda);
     }
 
-    private void parseLambda() {
-        parseParams("->");
+    private AstNode parseLambda() {
+        AstNode.LambdaNode lambdaNode = new AstNode.LambdaNode();
+        parseParams(lambdaNode.params, "->");
         match("->", "{", "return");
-        parseBody("");
+        lambdaNode.body = parseBody("");
+        return lambdaNode;
     }
 
-    private void parseParams(String... follow) {
-        Token c = current();
-        if (c == null) {
-            addError("Ожидались параметры лямбда-выражения");
-            return;
-        }
-        
-        if (c.getText().equals("(")) {
-            advance();
-            c = current();
-            if (c != null && !c.getText().equals(")")) {
-                parseParamList(")");
-            }
-            match(")", "->");
-        } else if (c.getCode() == 2) { 
-            advance();
-        } else {
-            addError("Ожидались параметры лямбда-выражения");
-            recover(follow);
-        }
-    }
-
-    private void parseParamList(String... follow) {
-        parseParam(",", ")");
-        parseParamListTail(")");
-    }
-
-    private void parseParamListTail(String... follow) {
-        while (!isEOF()) {
-            Token c = current();
-            if (c != null && c.getText().equals(",")) {
-                advance();
-                parseParam(",", ")");
-            } else {
-                break;
-            }
-        }
-    }
-
-    private void parseParam(String... follow) {
+    private void parseParams(List<AstNode.ParamNode> paramsList, String... follow) {
         Token c = current();
         if (c == null) return;
 
-        if (c.getCode() == 14) {
+        if (c.getText().equals("(")) {
             advance();
-            matchType(2, "идентификатор параметра", follow);
+            if (current() != null && !current().getText().equals(")")) {
+                parseParamList(paramsList, ")");
+            }
+            match(")", "->");
         } else if (c.getCode() == 2) {
+            String paramName = c.getText();
+            checkAndAddParam(paramsList, null, paramName);
             advance();
         } else {
-            addError("Ожидался параметр (идентификатор или тип с идентификатором)");
+            addError("Ожидались параметры лямбда-выражения");
             recover(follow);
         }
     }
 
-    private void parseBody(String... follow) {
+    private void parseParamList(List<AstNode.ParamNode> paramsList, String... follow) {
+        parseParam(paramsList, ",", ")");
+        while (!isEOF() && current() != null && current().getText().equals(",")) {
+            advance();
+            parseParam(paramsList, ",", ")");
+        }
+    }
+
+    private void parseParam(List<AstNode.ParamNode> paramsList, String... follow) {
         Token c = current();
-        if (c == null) {
-            addError("Ожидалось тело лямбда-выражения");
+        if (c == null) return;
+
+        String paramType = null;
+        String paramName = null;
+
+        if (c.getCode() == 14) {
+            paramType = c.getText();
+            advance();
+            if (current() != null && current().getCode() == 2) {
+                paramName = current().getText();
+                advance();
+            } else {
+                addError("Ожидался идентификатор параметра");
+            }
+        } else if (c.getCode() == 2) {
+            paramName = c.getText();
+            advance();
+        } else {
+            addError("Ожидался параметр");
+            recover(follow);
             return;
         }
+
+        checkAndAddParam(paramsList, paramType, paramName);
+    }
+
+    private void checkAndAddParam(List<AstNode.ParamNode> paramsList, String type, String name) {
+        if (name != null) {
+            if (symbolTable.containsKey(name)) {
+                addError("Семантическая ошибка: параметр '" + name + "' уже объявлен");
+            } else {
+                symbolTable.put(name, type != null ? type : "implicit");
+                paramsList.add(new AstNode.ParamNode(type, name));
+            }
+        }
+    }
+
+    private AstNode parseBody(String... follow) {
+        Token c = current();
+        if (c == null) return null;
 
         if (c.getText().equals("{")) {
             advance();
-            parseStmtList("}");
-            match("}", follow);
-        } else if (c.getText().equals(";")) {
-            addError("Ожидалось тело лямбда-выражения");
-        } else {
-            parseExpr(";", "EOF");
-        }
-    }
-
-    private void parseStmtList(String... follow) {
-        while (!isEOF()) {
-            Token c = current();
-            if (c != null && c.getText().equals("}")) {
-                break;
+            AstNode expr = null;
+            while (!isEOF() && !current().getText().equals("}")) {
+                expr = parseStmt("}", ";", "return");
             }
-            parseStmt("}", ";", "return");
+            match("}", follow);
+            return expr; // Возвращаем последнее выражение
+        } else {
+            return parseExpr(";", "EOF");
         }
     }
 
-    private void parseStmt(String... follow) {
+    private AstNode parseStmt(String... follow) {
         Token c = current();
-        if (c == null) return;
+        if (c == null) return null;
+        AstNode expr = null;
 
         if (c.getText().equals("return")) {
             advance();
-            parseExpr(";");
-            match(";", "}", "return");
-        } else if (c.getCode() == 14) { 
-            advance(); 
-            matchType(2, "идентификатор переменной", "=", ";");
-            if (current() != null && current().getText().equals("=")) {
-                advance();
-                parseExpr(";");
-            }
+            expr = parseExpr(";");
             match(";", "}", "return");
         } else {
-            parseExpr(";");
+            expr = parseExpr(";");
             match(";", "}", "return");
         }
+        return expr;
     }
 
-    private void parseExpr(String... follow) {
-        List<String> termFollows = new ArrayList<>(Arrays.asList("+", "-", "*", "/", "="));
-        termFollows.addAll(Arrays.asList(follow));
-        parseTerm(termFollows.toArray(new String[0]));
-        parseExprTail(follow);
+    private AstNode parseExpr(String... follow) {
+        AstNode left = parseTerm("+", "-", "*", "/");
+        return parseExprTail(left, follow);
     }
 
-    private void parseExprTail(String... follow) {
+    private AstNode parseExprTail(AstNode left, String... follow) {
         while (!isEOF()) {
             Token c = current();
-            if (c != null && isOp(c.getText())) {
+            if (c != null && ("+".equals(c.getText()) || "-".equals(c.getText()) || "*".equals(c.getText()) || "/".equals(c.getText()))) {
+                String op = c.getText();
                 advance();
-                List<String> termFollows = new ArrayList<>(Arrays.asList("+", "-", "*", "/", "="));
-                termFollows.addAll(Arrays.asList(follow));
-                parseTerm(termFollows.toArray(new String[0]));
+                AstNode right = parseTerm("+", "-", "*", "/", ";", ")");
+
+                if (left == null || right == null) {
+                    addError("Семантическая ошибка: неверные операнды для оператора " + op);
+                }
+
+                left = new AstNode.BinaryOpNode(op, left, right);
             } else {
                 break;
             }
         }
+        return left;
     }
 
-    private boolean isOp(String text) {
-        return Arrays.asList("+", "-", "*", "/", "=").contains(text);
-    }
-
-    private void parseTerm(String... follow) {
+    private AstNode parseTerm(String... follow) {
         Token c = current();
         if (c == null) {
-            addError("Ожидался операнд (идентификатор, число, строка или выражение в скобках)");
-            return;
+            addError("Ожидался операнд");
+            return null;
         }
 
         if (c.getCode() == 2) {
+            String varName = c.getText();
             advance();
-            c = current();
-            if (c != null && c.getText().equals(".")) {
-                while (c != null && c.getText().equals(".")) {
-                    advance();
-                    matchType(2, "идентификатор атрибута/метода", "(", ";", ")");
-                    c = current();
-                }
-                c = current();
-                if (c != null && c.getText().equals("(")) {
-                    advance();
-                    parseArgs(")");
-                    match(")", follow);
-                }
-            } else if (c != null && c.getText().equals("(")) {
-                advance();
-                parseArgs(")");
-                match(")", follow);
+            if (!symbolTable.containsKey(varName)) {
+                addError("Семантическая ошибка: переменная '" + varName + "' не объявлена");
             }
-        } else if (c.getCode() == 1 || c.getCode() == 6) { 
+            return new AstNode.VariableNode(varName);
+
+        } else if (c.getCode() == 1 || c.getCode() == 6) {
+            String numVal = c.getText();
             advance();
-        } else if (c.getCode() == 5) {
-            advance();
+            try {
+                if (c.getCode() == 1) Integer.parseInt(numVal);
+                else Double.parseDouble(numVal);
+            } catch (NumberFormatException e) {
+                addError("Семантическая ошибка: число " + numVal + " выходит за допустимые пределы");
+            }
+            return new AstNode.NumberNode(numVal);
+
         } else if (c.getText().equals("(")) {
             advance();
-            parseExpr(")");
+            AstNode expr = parseExpr(")");
             match(")", follow);
-        } else if (c.getText().equals(".")) {
-            Token next = pos + 1 < tokens.size() ? tokens.get(pos + 1) : null;
-            if (next != null && next.getCode() == 1) {
-                addError("Ожидалась цифра перед десятичной точкой");
-            } else {
-                addError("Ожидался операнд (идентификатор, число, строка или выражение в скобках)");
-            }
-            advance();
+            return expr;
         } else {
-            addError("Ожидался операнд (идентификатор, число, строка или выражение в скобках)");
+            addError("Ожидался операнд");
             recover(follow);
-        }
-    }
-
-    private void parseArgs(String... follow) {
-        Token c = current();
-        if (c == null || c.getText().equals(")")) return;
-        
-        parseExpr(",", ")");
-        parseArgsTail(")");
-    }
-
-    private void parseArgsTail(String... follow) {
-        while (!isEOF()) {
-            Token c = current();
-            if (c != null && c.getText().equals(",")) {
-                advance();
-                parseExpr(",", ")");
-            } else {
-                break;
-            }
+            return null;
         }
     }
 }
