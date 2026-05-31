@@ -442,13 +442,13 @@ public class HelloController {
         if (closeAllTabsSafely()) ((Stage) editorTabPane.getScene().getWindow()).close();
     }
 
-    @FXML public void handleUndo() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.undo(); }
-    @FXML public void handleRedo() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.redo(); }
-    @FXML public void handleCut() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.cut(); }
-    @FXML public void handleCopy() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.copy(); }
-    @FXML public void handlePaste() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.paste(); }
-    @FXML public void handleDelete() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.replaceSelection(""); }
-    @FXML public void handleSelectAll() { CodeArea ta = getCurrentTextArea(); if (ta != null) ta.selectAll(); }
+    @FXML public void handleUndo() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.undo(); } }
+    @FXML public void handleRedo() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.redo(); } }
+    @FXML public void handleCut() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.cut(); } }
+    @FXML public void handleCopy() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.copy(); } }
+    @FXML public void handlePaste() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.paste(); } }
+    @FXML public void handleDelete() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.replaceSelection(""); } }
+    @FXML public void handleSelectAll() { CodeArea ta = getCurrentTextArea(); if (ta != null) { ta.requestFocus(); ta.selectAll(); } }
 
 
     @FXML public void handleRun() {
